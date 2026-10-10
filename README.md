@@ -9,6 +9,8 @@ The proxy still uses the original API and websocket:
 - `https://breezeunb.locker`
 - `wss://breezeunb.locker/wind/`
 
+If this file is opened on a host that does not have the `assets` folder, the inline script at the top of `index.html` and `index.svg` points every relative stylesheet, script, and image at the GitHub CDN.
+
 ## Run locally
 
 From this directory:

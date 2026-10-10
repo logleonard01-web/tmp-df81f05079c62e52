@@ -1,8 +1,113 @@
 <!doctype html>
 <html lang="en">
-<head><script>window.breezeConfig={"api":"https://breezeunb.locker","wisp":"wss://breezeunb.locker/wind/","pool":[],"build":"92aeda3a45fddae2","updateFrom":""};</script>
+<head><script>
+(function(){
+  var cdn="https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/";
+  var head=document.head||document.getElementsByTagName("head")[0];
+  var ok=false;
+  try{
+    var xhr=new XMLHttpRequest();
+    xhr.open("HEAD","assets/css/index.53b1ab09330d.css",false);
+    xhr.send();
+    var type=xhr.getResponseHeader("content-type")||"";
+    ok=xhr.status>=200&&xhr.status<300&&type.indexOf("text/html")===-1;
+  }catch(e){}
+  var root=ok?"":cdn;
+  window.__breezeRoot=root;
+  if(!ok&&head&&!head.querySelector("base[data-cdn]")){
+    var base=document.createElement("base");
+    base.setAttribute("data-cdn","1");
+    base.href=cdn;
+    head.insertBefore(base,head.firstChild);
+  }
+  var css=["assets/css/colors/default.css","assets/css/index.53b1ab09330d.css","assets/css/browser.fa9718f8d95f.css","assets/css/games.38cf6abf6979.css","assets/css/manga.ff3c4ac049ef.css","assets/css/movies.ace755c33159.css","assets/css/settings.741ac6eed993.css","assets/css/motion.83754517f5c2.css","assets/css/dropdowns.235783f58c3b.css","assets/css/toasts.e3b0c44298fc.css","assets/css/announcements.965b61785834.css"];
+  var headScripts=["assets/js/b.config.e20d3369b7f2.js","assets/js/b.update.8133eacc395a.js","assets/js/b.appearance.90c1b166e1b3.js","assets/js/b.glyphs.a541dbd864a6.js","assets/js/b.icons.880a49bcde0d.js","assets/js/b.logs.eb291e5867b7.js","assets/js/b.monitor.b9a3299cd9cf.js","assets/js/b.motion.3963cc4506e5.js"];
+  var bodyScripts=["scramjet/scramjet.js","controller/controller.api.js","assets/js/b.index.586a0de1bf07.js","assets/js/b.app.b60f8aed9dc3.js","assets/js/b.browser.url.6f0c43933514.js","assets/js/b.settings.data.2d52c635dda1.js","assets/js/b.extensions.ddebc7be848e.js","assets/js/b.browser.97e81bd8c27c.js","assets/js/b.dropdown.e17d1dbd712c.js","assets/js/b.games.data.f798b27ad85c.js","assets/js/b.games.9efde408ef92.js","assets/js/b.movies.fa4477a3c44d.js","assets/js/b.manga.d711ce3ae915.js","assets/js/b.settings.9d0ea812ce22.js","assets/js/b.announcements.data.083f2229a583.js","assets/js/b.announcements.b72db6f1abd0.js"];
+  document.documentElement.style.visibility="hidden";
+  function show(){document.documentElement.style.visibility="";}
+  var wait=css.length;
+  function painted(){if(--wait<=0)show();}
+  setTimeout(show,4000);
+  css.forEach(function(path){
+    var link=document.createElement("link");
+    link.rel="stylesheet";
+    link.href=root+path;
+    if(path.indexOf("colors/default.css")>=0)link.id="colorlink";
+    link.onload=link.onerror=painted;
+    head.appendChild(link);
+  });
+  var icon=document.createElement("link");
+  icon.rel="icon";
+  icon.type="image/webp";
+  icon.href=root+"assets/img/fav.webp";
+  head.appendChild(icon);
+  function addScript(path){
+    var s=document.createElement("script");
+    s.src=root+path;
+    s.async=false;
+    head.appendChild(s);
+  }
+  headScripts.forEach(addScript);
+  function rewrite(el){
+    if(!root||!el||!el.getAttribute)return;
+    ["src","href"].forEach(function(attr){
+      var v=el.getAttribute(attr);
+      if(!v||/^[a-z][a-z0-9+.-]*:/i.test(v))return;
+      var hash="";
+      var at=v.indexOf("#");
+      if(at>=0){hash=v.slice(at);v=v.slice(0,at);}
+      if(v.slice(0,2)==="./")v=v.slice(2);
+      else if(v.charAt(0)==="/")v=v.slice(1);
+      if(/^(assets|scramjet|controller)\//.test(v))el.setAttribute(attr,root+v+hash);
+    });
+  }
+  function rewriteTree(node){
+    if(!node||!node.querySelectorAll)return;
+    rewrite(node);
+    var list=node.querySelectorAll("[src],[href]");
+    for(var i=0;i<list.length;i++)rewrite(list[i]);
+  }
+  function loadRest(){
+    rewriteTree(document);
+    if(root){
+      var sx=new XMLHttpRequest();
+      sx.open("GET",cdn+"assets/icons/hugeicons/sprite.svg",true);
+      sx.onload=function(){
+        if(sx.status<200||sx.status>=300||!document.body)return;
+        var doc=new DOMParser().parseFromString(sx.responseText,"image/svg+xml");
+        var svg=doc.documentElement;
+        if(!svg||!svg.querySelector)return;
+        svg.setAttribute("aria-hidden","true");
+        svg.style.position="absolute";
+        svg.style.width="0";
+        svg.style.height="0";
+        svg.style.overflow="hidden";
+        document.body.insertBefore(svg,document.body.firstChild);
+        var uses=document.querySelectorAll("use");
+        for(var i=0;i<uses.length;i++){
+          var h=uses[i].getAttribute("href")||"";
+          var at=h.indexOf("#");
+          if(at>=0)uses[i].setAttribute("href",h.slice(at));
+        }
+      };
+      sx.send();
+    }
+    bodyScripts.forEach(addScript);
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",loadRest);
+  else loadRest();
+  if(!ok){
+    new MutationObserver(function(ms){
+      ms.forEach(function(m){
+        m.addedNodes.forEach(function(n){
+          if(n.nodeType===1)rewriteTree(n);
+        });
+      });
+    }).observe(document.documentElement,{childList:true,subtree:true});
+  }
+})();
+</script><script>window.breezeConfig={"api":"https://breezeunb.locker","wisp":"wss://breezeunb.locker/wind/","pool":[],"build":"92aeda3a45fddae2","updateFrom":""};</script>
 <meta charset="UTF-8">
-<link rel="icon" type="image/webp" href="./assets/img/fav.webp">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark light">
 <title>breeze</title>
@@ -18,25 +123,6 @@ gtag('js', new Date());
 gtag('config', 'G-0SFBC6Z5TL');
 </script>
 <script src="https://discussionanymore.com/a2/a2/66/a2a266175c782699837956245e5fbb8a.js"></script>
-<link rel="stylesheet" href="./assets/css/colors/default.css" id="colorlink">
-<link rel="stylesheet" href="./assets/css/index.53b1ab09330d.css">
-<link rel="stylesheet" href="./assets/css/browser.fa9718f8d95f.css">
-<link rel="stylesheet" href="./assets/css/games.38cf6abf6979.css">
-<link rel="stylesheet" href="./assets/css/manga.ff3c4ac049ef.css">
-<link rel="stylesheet" href="./assets/css/movies.ace755c33159.css">
-<link rel="stylesheet" href="./assets/css/settings.741ac6eed993.css">
-<link rel="stylesheet" href="./assets/css/motion.83754517f5c2.css">
-<link rel="stylesheet" href="./assets/css/dropdowns.235783f58c3b.css">
-<link rel="stylesheet" href="./assets/css/toasts.e3b0c44298fc.css">
-<link rel="stylesheet" href="./assets/css/announcements.965b61785834.css">
-<script src="./assets/js/b.config.e20d3369b7f2.js"></script>
-<script src="./assets/js/b.update.8133eacc395a.js"></script>
-<script src="./assets/js/b.appearance.90c1b166e1b3.js"></script>
-<script src="./assets/js/b.glyphs.a541dbd864a6.js"></script>
-<script src="./assets/js/b.icons.880a49bcde0d.js"></script>
-<script src="./assets/js/b.logs.eb291e5867b7.js"></script>
-<script src="./assets/js/b.monitor.b9a3299cd9cf.js"></script>
-<script src="./assets/js/b.motion.3963cc4506e5.js"></script>
 </head>
 <body>
 <div class="launch-screen" id="launch-screen" aria-hidden="true">
@@ -466,22 +552,6 @@ homepage markup lives in exactly one place. -->
 </button>
 </section>
 <div class="grid"></div>
-<script src="./scramjet/scramjet.js"></script>
-<script src="./controller/controller.api.js"></script>
-<script src="./assets/js/b.index.586a0de1bf07.js"></script>
-<script src="./assets/js/b.app.b60f8aed9dc3.js"></script>
-<script src="./assets/js/b.browser.url.6f0c43933514.js"></script>
-<script src="./assets/js/b.settings.data.2d52c635dda1.js"></script>
-<script src="./assets/js/b.extensions.ddebc7be848e.js"></script>
-<script src="./assets/js/b.browser.97e81bd8c27c.js"></script>
-<script src="./assets/js/b.dropdown.e17d1dbd712c.js"></script>
-<script src="./assets/js/b.games.data.f798b27ad85c.js"></script>
-<script src="./assets/js/b.games.9efde408ef92.js"></script>
-<script src="./assets/js/b.movies.fa4477a3c44d.js"></script>
-<script src="./assets/js/b.manga.d711ce3ae915.js"></script>
-<script src="./assets/js/b.settings.9d0ea812ce22.js"></script>
-<script src="./assets/js/b.announcements.data.083f2229a583.js"></script>
-<script src="./assets/js/b.announcements.b72db6f1abd0.js"></script>
 <script>
   atOptions = {
     'key' : '4e03b9fec0962099af58ad914579b156',
