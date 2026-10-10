@@ -25,4 +25,4 @@ Open [http://127.0.0.1:8741](http://127.0.0.1:8741).
 
 ## Ads
 
-The original direct-link popup is removed. `index.html` and `index.svg` still load the Adsterra tags from Cool-GamesV2: a 728×90 banner, a 160×300 banner, and the popunder script, all from `discussionanymore.com`. The popunder does not open a new window. When that script tries to open a link, the link loads in the in-page proxy instead.
+The original direct-link popup is removed, and the banner tags are removed. `index.html` and `index.svg` load only the popunder script from `discussionanymore.com`. That script does not open a new window. When it tries to open a link, the link loads in the in-page proxy instead.

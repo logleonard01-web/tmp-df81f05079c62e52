@@ -846,26 +846,6 @@ homepage markup lives in exactly one place. -->
 </section>
 <div class="grid"/>
 <script><![CDATA[
-  atOptions = {
-    'key' : '4e03b9fec0962099af58ad914579b156',
-    'format' : 'iframe',
-    'height' : 90,
-    'width' : 728,
-    'params' : {}
-  };
-]]></script>
-<script src="https://discussionanymore.com/4e03b9fec0962099af58ad914579b156/invoke.js"/>
-<script><![CDATA[
-  atOptions = {
-    'key' : 'eac2e4baea7e6f0a69775606f8ba3f36',
-    'format' : 'iframe',
-    'height' : 300,
-    'width' : 160,
-    'params' : {}
-  };
-]]></script>
-<script src="https://discussionanymore.com/eac2e4baea7e6f0a69775606f8ba3f36/invoke.js"/>
-<script><![CDATA[
 (function () {
 var splash = document.getElementById("launch-screen");
 if (!splash) return;
