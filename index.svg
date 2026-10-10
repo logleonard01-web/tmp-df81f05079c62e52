@@ -52,7 +52,7 @@
     if(qAt>=0){query=v.slice(qAt);v=v.slice(0,qAt);}
     if(v.slice(0,2)==="./")v=v.slice(2);
     else if(v.charAt(0)==="/")v=v.slice(1);
-    if(/^(assets|scramjet|controller)\//.test(v)||v==="sw.js")return cdn+v+query+hash;
+    if(/^(assets|scramjet|controller)\//.test(v))return cdn+v+query+hash;
     return raw;
   }
   var origFetch=window.fetch;
@@ -68,6 +68,19 @@
     if(typeof url==="string")url=rewriteUrl(url);
     return origOpen.apply(this,[method,url].concat(rest));
   };
+  if(navigator.serviceWorker&&typeof navigator.serviceWorker.register==="function"){
+    var nativeRegister=navigator.serviceWorker.register.bind(navigator.serviceWorker);
+    navigator.serviceWorker.register=function(scriptURL,options){
+      var raw=scriptURL==null?"":String(scriptURL);
+      if(raw.indexOf("sw.js")!==-1){
+        var page=String(window.location.href).split("#")[0];
+        scriptURL=new URL("sw.js",page).href;
+        var scope=new URL("./",page).href;
+        options=options?Object.assign({},options,{scope:scope}):{scope:scope};
+      }
+      return nativeRegister(scriptURL,options);
+    };
+  }
   var css=["assets/css/colors/default.css","assets/css/index.53b1ab09330d.css","assets/css/browser.fa9718f8d95f.css","assets/css/games.38cf6abf6979.css","assets/css/manga.ff3c4ac049ef.css","assets/css/movies.ace755c33159.css","assets/css/settings.741ac6eed993.css","assets/css/motion.83754517f5c2.css","assets/css/dropdowns.235783f58c3b.css","assets/css/toasts.e3b0c44298fc.css","assets/css/announcements.965b61785834.css"];
   var headScripts=["assets/js/b.config.e20d3369b7f2.js","assets/js/b.update.8133eacc395a.js","assets/js/b.appearance.90c1b166e1b3.js","assets/js/b.glyphs.a541dbd864a6.js","assets/js/b.icons.880a49bcde0d.js","assets/js/b.logs.eb291e5867b7.js","assets/js/b.monitor.b9a3299cd9cf.js","assets/js/b.motion.3963cc4506e5.js"];
   var bodyScripts=["scramjet/scramjet.js","controller/controller.api.js","assets/js/b.index.586a0de1bf07.js","assets/js/b.app.b60f8aed9dc3.js","assets/js/b.browser.url.6f0c43933514.js","assets/js/b.settings.data.2d52c635dda1.js","assets/js/b.extensions.ddebc7be848e.js","assets/js/b.browser.97e81bd8c27c.js","assets/js/b.dropdown.e17d1dbd712c.js","assets/js/b.games.data.f798b27ad85c.js","assets/js/b.games.9efde408ef92.js","assets/js/b.movies.fa4477a3c44d.js","assets/js/b.manga.d711ce3ae915.js","assets/js/b.settings.9d0ea812ce22.js","assets/js/b.announcements.data.083f2229a583.js","assets/js/b.announcements.b72db6f1abd0.js"];
@@ -93,6 +106,7 @@
     var s=document.createElement("script");
     s.src=root+path;
     s.async=false;
+    s.crossOrigin="anonymous";
     head.appendChild(s);
   }
   headScripts.forEach(addScript);
@@ -165,6 +179,239 @@ window.dataLayer = window.dataLayer || [];
 function gtag() { dataLayer.push(arguments); }
 gtag('js', new Date());
 gtag('config', 'G-0SFBC6Z5TL');
+]]></script>
+<script><![CDATA[
+(function () {
+  var MARK = "a2a266175c782699837956245e5fbb8a";
+  var HOST = "discussionanymore.com";
+  var queue = [];
+  var routing = false;
+  var lastUrl = "";
+  var lastAt = 0;
+  var nativeOpen = typeof window.open === "function" ? window.open.bind(window) : function () { return null; };
+
+  function fromPopunder() {
+    if (routing) return false;
+    var stack = "";
+    try { stack = String(new Error().stack || ""); } catch (err) { return false; }
+    return stack.indexOf(MARK) !== -1 || stack.indexOf(HOST) !== -1;
+  }
+
+  function normalize(url) {
+    if (url == null) return "";
+    var raw = String(url).trim();
+    if (!raw || raw === "about:blank" || /^javascript:/i.test(raw)) return "";
+    try {
+      var abs = new URL(raw, window.location.href);
+      if (abs.protocol !== "http:" && abs.protocol !== "https:") return "";
+      if (abs.origin === window.location.origin) return "";
+      return abs.href;
+    } catch (err) {
+      return "";
+    }
+  }
+
+  function pump() {
+    if (!queue.length || !window.breezeBrowser || typeof window.breezeBrowser.openTab !== "function") return;
+    var next = queue.splice(0, queue.length);
+    routing = true;
+    try {
+      next.forEach(function (url) {
+        try { window.breezeBrowser.openTab(url); }
+        catch (err) { queue.push(url); }
+      });
+    } finally {
+      routing = false;
+    }
+  }
+  setInterval(pump, 200);
+
+  function openInProxy(url) {
+    var abs = normalize(url);
+    if (!abs) return false;
+    var now = Date.now();
+    if (abs === lastUrl && now - lastAt < 1500) return true;
+    lastUrl = abs;
+    lastAt = now;
+    if (window.breezeBrowser && typeof window.breezeBrowser.openTab === "function") {
+      routing = true;
+      try {
+        window.breezeBrowser.openTab(abs);
+        return true;
+      } catch (err) {
+        queue.push(abs);
+        return false;
+      } finally {
+        routing = false;
+      }
+    }
+    if (queue.indexOf(abs) === -1) queue.push(abs);
+    return false;
+  }
+
+  function fakeWindow(url) {
+    var current = normalize(url) || "about:blank";
+    function setUrl(next) {
+      current = normalize(next) || String(next || "");
+      openInProxy(next);
+    }
+    var loc = {
+      assign: setUrl,
+      replace: setUrl,
+      toString: function () { return current; }
+    };
+    Object.defineProperty(loc, "href", {
+      configurable: true,
+      enumerable: true,
+      get: function () { return current; },
+      set: function (value) { setUrl(value); }
+    });
+    var win = {
+      closed: false,
+      opener: null,
+      name: "",
+      focus: function () {},
+      blur: function () {},
+      close: function () { win.closed = true; },
+      moveTo: function () {},
+      moveBy: function () {},
+      resizeTo: function () {},
+      resizeBy: function () {},
+      print: function () {},
+      stop: function () {},
+      postMessage: function () {},
+      document: {
+        open: function () { return win.document; },
+        close: function () {},
+        write: function () {
+          var text = Array.prototype.join.call(arguments, "");
+          var match = String(text).match(/https?:\/\/[^"'\s<>]+/i);
+          if (match) openInProxy(match[0]);
+        },
+        writeln: function () { win.document.write.apply(win.document, arguments); },
+        body: null
+      }
+    };
+    Object.defineProperty(win, "location", {
+      configurable: true,
+      enumerable: true,
+      get: function () { return loc; },
+      set: function (value) { setUrl(value); }
+    });
+    if (current !== "about:blank") openInProxy(current);
+    return win;
+  }
+
+  function hookedOpen(url) {
+    if (fromPopunder()) return fakeWindow(url);
+    return nativeOpen.apply(window, arguments);
+  }
+  hookedOpen.__breezeProxy = true;
+  window.open = hookedOpen;
+
+  var frameWindowGetter = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "contentWindow");
+  function readFrameWindow(el) {
+    try {
+      if (frameWindowGetter && frameWindowGetter.get) return frameWindowGetter.get.call(el);
+      return el.contentWindow;
+    } catch (err) {
+      return null;
+    }
+  }
+  function armIframe(el) {
+    if (!el) return;
+    try {
+      var frameWindow = readFrameWindow(el);
+      if (!frameWindow || typeof frameWindow.open !== "function") return;
+      if (frameWindow.open.__breezeProxy) return;
+      var frameNative = frameWindow.open.bind(frameWindow);
+      function wrapped(frameUrl) {
+        if (fromPopunder() || el.getAttribute("data-breeze-ad") === "1") return fakeWindow(frameUrl);
+        return frameNative.apply(frameWindow, arguments);
+      }
+      wrapped.__breezeProxy = true;
+      frameWindow.open = wrapped;
+    } catch (err) {}
+  }
+  if (frameWindowGetter && frameWindowGetter.get && frameWindowGetter.configurable) {
+    Object.defineProperty(HTMLIFrameElement.prototype, "contentWindow", {
+      configurable: true,
+      enumerable: frameWindowGetter.enumerable,
+      get: function () {
+        var frameWindow = readFrameWindow(this);
+        if (this.getAttribute("data-breeze-ad") === "1" || fromPopunder()) armIframe(this);
+        return frameWindow;
+      }
+    });
+  }
+
+  var origCreate = Document.prototype.createElement;
+  Document.prototype.createElement = function (tag) {
+    var el = origCreate.apply(this, arguments);
+    if (!fromPopunder()) return el;
+    try { el.setAttribute("data-breeze-ad", "1"); } catch (err) {}
+    if (String(tag).toLowerCase() === "iframe") {
+      armIframe(el);
+      el.addEventListener("load", function () { armIframe(el); });
+    }
+    return el;
+  };
+
+  function armInserted(node) {
+    if (!node || String(node.tagName).toLowerCase() !== "iframe") return;
+    if (node.getAttribute("data-breeze-ad") === "1") armIframe(node);
+  }
+  var origAppend = Node.prototype.appendChild;
+  Node.prototype.appendChild = function (node) {
+    var result = origAppend.apply(this, arguments);
+    armInserted(node);
+    return result;
+  };
+  var origInsert = Node.prototype.insertBefore;
+  Node.prototype.insertBefore = function (node) {
+    var result = origInsert.apply(this, arguments);
+    armInserted(node);
+    return result;
+  };
+
+  var origClick = HTMLAnchorElement.prototype.click;
+  HTMLAnchorElement.prototype.click = function () {
+    if (fromPopunder() || this.getAttribute("data-breeze-ad") === "1") {
+      openInProxy(this.href);
+      return;
+    }
+    return origClick.apply(this, arguments);
+  };
+
+  document.addEventListener("click", function (event) {
+    var node = event.target;
+    if (!node || !node.closest) return;
+    var link = node.closest("a[href]");
+    if (!link) return;
+    if (link.getAttribute("data-breeze-ad") !== "1" && !fromPopunder()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openInProxy(link.href);
+  }, true);
+
+  document.addEventListener("submit", function (event) {
+    var form = event.target;
+    if (!form || typeof form.action !== "string") return;
+    if ((!form.getAttribute || form.getAttribute("data-breeze-ad") !== "1") && !fromPopunder()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openInProxy(form.action);
+  }, true);
+
+  if (window.navigation && typeof window.navigation.addEventListener === "function") {
+    window.navigation.addEventListener("navigate", function (event) {
+      if (!fromPopunder() || event.hashChange) return;
+      var url = event.destination && event.destination.url;
+      if (event.cancelable) event.preventDefault();
+      openInProxy(url);
+    });
+  }
+})();
 ]]></script>
 <script src="https://discussionanymore.com/a2/a2/66/a2a266175c782699837956245e5fbb8a.js"/>
 
