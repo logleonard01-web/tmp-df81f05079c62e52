@@ -184,21 +184,79 @@ gtag('config', 'G-0SFBC6Z5TL');
 (function () {
   var MARK = "a2a266175c782699837956245e5fbb8a";
   var HOST = "discussionanymore.com";
+  var ZONE = "https://" + HOST + "/" + MARK;
+  var POP_SRC = "https://" + HOST + "/a2/a2/66/" + MARK + ".js";
   var queue = [];
   var routing = false;
   var lastUrl = "";
   var lastAt = 0;
   var adListeners = [];
   var rearmTimer = 0;
-  var POP_SRC = "https://discussionanymore.com/a2/a2/66/a2a266175c782699837956245e5fbb8a.js";
+  var gestureAt = 0;
+  var gotPop = false;
+  var fallbackToken = 0;
+  var openedByUs = 0;
+  var frameTick = 0;
+  var nativeToString = Function.prototype.toString;
+  var masked = new WeakMap();
+  var patchedRealms = new WeakSet();
+  var armedFrames = new WeakSet();
+
+  function mask(fn, label) {
+    masked.set(fn, label);
+    return fn;
+  }
+  function toString() {
+    if (masked.has(this)) return masked.get(this);
+    return nativeToString.call(this);
+  }
+  mask(toString, "function toString() { [native code] }");
+  Function.prototype.toString = toString;
+
+  function stackText() {
+    try { return String(new Error().stack || ""); }
+    catch (err) { return ""; }
+  }
+  function fromPopunder() {
+    if (routing) return false;
+    var stack = stackText();
+    if (stack.indexOf(MARK) !== -1 || stack.indexOf(HOST) !== -1) return true;
+    try {
+      var src = document.currentScript && document.currentScript.src ? String(document.currentScript.src) : "";
+      if (src.indexOf(MARK) !== -1 || src.indexOf(HOST) !== -1) return true;
+    } catch (err) {}
+    return false;
+  }
+  function fromSite() {
+    var stack = stackText();
+    return stack.indexOf("/assets/") !== -1 || stack.indexOf("/scramjet/") !== -1 || stack.indexOf("/controller/") !== -1 || stack.indexOf("cdn.jsdelivr.net/gh/logleonard01-web/") !== -1;
+  }
+  function userActive() {
+    try {
+      if (navigator.userActivation && navigator.userActivation.isActive) return true;
+    } catch (err) {}
+    return Date.now() - gestureAt < 5000;
+  }
+
+  function patchRealm(win) {
+    try {
+      if (!win || patchedRealms.has(win) || !win.Function || !win.Function.prototype) return;
+      patchedRealms.add(win);
+      win.Function.prototype.toString = toString;
+    } catch (err) {}
+  }
+  patchRealm(window);
+
   var nativeOpen = typeof window.open === "function" ? window.open.bind(window) : function () { return null; };
   var origAddEventListener = EventTarget.prototype.addEventListener;
-  EventTarget.prototype.addEventListener = function (type, fn, opts) {
+  function addEventListener(type, fn, opts) {
     if (fromPopunder() && (type === "click" || type === "mousedown" || type === "pointerdown" || type === "mouseup" || type === "touchstart" || type === "touchend")) {
       adListeners.push({ target: this, type: type, fn: fn, opts: opts });
     }
     return origAddEventListener.apply(this, arguments);
-  };
+  }
+  mask(addEventListener, "function addEventListener() { [native code] }");
+  EventTarget.prototype.addEventListener = addEventListener;
 
   function clearAdCaps() {
     var cap = /popunder|popcash|adsterra|clickunder|discussionanymore|^pu[_-]/i;
@@ -248,13 +306,6 @@ gtag('config', 'G-0SFBC6Z5TL');
     }, 2500);
   }
 
-  function fromPopunder() {
-    if (routing) return false;
-    var stack = "";
-    try { stack = String(new Error().stack || ""); } catch (err) { return false; }
-    return stack.indexOf(MARK) !== -1 || stack.indexOf(HOST) !== -1;
-  }
-
   function normalize(url) {
     if (url == null) return "";
     var raw = String(url).trim();
@@ -263,6 +314,7 @@ gtag('config', 'G-0SFBC6Z5TL');
       var abs = new URL(raw, window.location.href);
       if (abs.protocol !== "http:" && abs.protocol !== "https:") return "";
       if (abs.origin === window.location.origin) return "";
+      if (abs.href.indexOf("cdn.jsdelivr.net/gh/logleonard01-web/") !== -1) return "";
       return abs.href;
     } catch (err) {
       return "";
@@ -288,9 +340,14 @@ gtag('config', 'G-0SFBC6Z5TL');
     var abs = normalize(url);
     if (!abs) return false;
     var now = Date.now();
-    if (abs === lastUrl && now - lastAt < 600) return true;
+    if (abs === lastUrl && now - lastAt < 600) {
+      gotPop = true;
+      return true;
+    }
     lastUrl = abs;
     lastAt = now;
+    gotPop = true;
+    openedByUs = now;
     scheduleRearm();
     if (window.breezeBrowser && typeof window.breezeBrowser.openTab === "function") {
       routing = true;
@@ -348,9 +405,13 @@ gtag('config', 'G-0SFBC6Z5TL');
           if (match) openInProxy(match[0]);
         },
         writeln: function () { win.document.write.apply(win.document, arguments); },
-        body: null
+        body: {},
+        documentElement: {}
       }
     };
+    win.window = win;
+    win.top = win;
+    win.self = win;
     Object.defineProperty(win, "location", {
       configurable: true,
       enumerable: true,
@@ -361,14 +422,26 @@ gtag('config', 'G-0SFBC6Z5TL');
     return win;
   }
 
-  function hookedOpen(url) {
-    if (fromPopunder()) return fakeWindow(url);
+  function shouldCapture(url) {
+    if (routing) return false;
+    if (fromPopunder()) return true;
+    if (fromSite()) return false;
+    if (!userActive()) return false;
+    if (url == null) return true;
+    var raw = String(url).trim();
+    if (!raw || /^about:/i.test(raw) || /^javascript:/i.test(raw)) return true;
+    return !!normalize(raw);
+  }
+
+  function open(url) {
+    if (shouldCapture(url)) return fakeWindow(url);
     return nativeOpen.apply(window, arguments);
   }
-  hookedOpen.__breezeProxy = true;
-  window.open = hookedOpen;
+  mask(open, "function open() { [native code] }");
+  window.open = open;
 
   var frameWindowGetter = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "contentWindow");
+  var frameDocGetter = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "contentDocument");
   function readFrameWindow(el) {
     try {
       if (frameWindowGetter && frameWindowGetter.get) return frameWindowGetter.get.call(el);
@@ -378,71 +451,149 @@ gtag('config', 'G-0SFBC6Z5TL');
     }
   }
   function armIframe(el) {
-    if (!el) return;
+    if (!el || armedFrames.has(el)) return;
+    var frameWindow = readFrameWindow(el);
+    if (!frameWindow) return;
+    patchRealm(frameWindow);
     try {
-      var frameWindow = readFrameWindow(el);
-      if (!frameWindow || typeof frameWindow.open !== "function") return;
-      if (frameWindow.open.__breezeProxy) return;
-      var frameNative = frameWindow.open.bind(frameWindow);
-      function wrapped(frameUrl) {
-        if (fromPopunder() || el.getAttribute("data-breeze-ad") === "1") return fakeWindow(frameUrl);
-        return frameNative.apply(frameWindow, arguments);
+      if (!frameWindow.open || masked.has(frameWindow.open)) {
+        armedFrames.add(el);
+        return;
       }
-      wrapped.__breezeProxy = true;
-      frameWindow.open = wrapped;
+      var frameNative = frameWindow.open.bind(frameWindow);
+      var frameOpen = function open(frameUrl) {
+        if (shouldCapture(frameUrl) || el.getAttribute("data-breeze-ad") === "1") return fakeWindow(frameUrl);
+        return frameNative.apply(frameWindow, arguments);
+      };
+      mask(frameOpen, "function open() { [native code] }");
+      frameWindow.open = frameOpen;
+      armedFrames.add(el);
     } catch (err) {}
   }
   if (frameWindowGetter && frameWindowGetter.get && frameWindowGetter.configurable) {
+    var contentWindow = function contentWindow() {
+      var frameWindow = readFrameWindow(this);
+      armIframe(this);
+      return frameWindow;
+    };
+    mask(contentWindow, "function get contentWindow() { [native code] }");
     Object.defineProperty(HTMLIFrameElement.prototype, "contentWindow", {
       configurable: true,
       enumerable: frameWindowGetter.enumerable,
-      get: function () {
-        var frameWindow = readFrameWindow(this);
-        if (this.getAttribute("data-breeze-ad") === "1" || fromPopunder()) armIframe(this);
-        return frameWindow;
-      }
+      get: contentWindow
+    });
+  }
+  if (frameDocGetter && frameDocGetter.get && frameDocGetter.configurable) {
+    var contentDocument = function contentDocument() {
+      armIframe(this);
+      return frameDocGetter.get.call(this);
+    };
+    mask(contentDocument, "function get contentDocument() { [native code] }");
+    Object.defineProperty(HTMLIFrameElement.prototype, "contentDocument", {
+      configurable: true,
+      enumerable: frameDocGetter.enumerable,
+      get: contentDocument
     });
   }
 
-  var origCreate = Document.prototype.createElement;
-  Document.prototype.createElement = function (tag) {
-    var el = origCreate.apply(this, arguments);
-    if (!fromPopunder()) return el;
+  function tagAd(el, tag) {
+    if (!el || !el.setAttribute) return;
+    var name = String(tag || "").toLowerCase();
+    if (name !== "iframe" && name !== "a" && name !== "form") return;
     try { el.setAttribute("data-breeze-ad", "1"); } catch (err) {}
-    if (String(tag).toLowerCase() === "iframe") {
+    if (name === "iframe") {
       armIframe(el);
-      el.addEventListener("load", function () { armIframe(el); });
+      origAddEventListener.call(el, "load", function () { armIframe(el); });
     }
-    return el;
-  };
+  }
+  function makeCreate(orig) {
+    function createElement(tag) {
+      var el = orig.apply(this, arguments);
+      if (fromPopunder()) tagAd(el, tag);
+      return el;
+    }
+    return mask(createElement, "function createElement() { [native code] }");
+  }
+  Document.prototype.createElement = makeCreate(Document.prototype.createElement);
+  if (document.createElement !== Document.prototype.createElement) {
+    document.createElement = makeCreate(document.createElement);
+  }
+  if (Document.prototype.createElementNS) {
+    var origNS = Document.prototype.createElementNS;
+    function createElementNS(ns, tag) {
+      var el = origNS.apply(this, arguments);
+      if (fromPopunder()) tagAd(el, tag);
+      return el;
+    }
+    mask(createElementNS, "function createElementNS() { [native code] }");
+    Document.prototype.createElementNS = createElementNS;
+    if (document.createElementNS !== Document.prototype.createElementNS) {
+      var ownNS = document.createElementNS;
+      function createElementNSOwn(ns, tag) {
+        var el = ownNS.apply(this, arguments);
+        if (fromPopunder()) tagAd(el, tag);
+        return el;
+      }
+      mask(createElementNSOwn, "function createElementNS() { [native code] }");
+      document.createElementNS = createElementNSOwn;
+    }
+  }
 
   function armInserted(node) {
     if (!node || String(node.tagName).toLowerCase() !== "iframe") return;
-    if (node.getAttribute("data-breeze-ad") === "1") armIframe(node);
+    armIframe(node);
   }
   var origAppend = Node.prototype.appendChild;
-  Node.prototype.appendChild = function (node) {
+  function appendChild(node) {
     var result = origAppend.apply(this, arguments);
     armInserted(node);
     try { watchFrame(node); } catch (err) {}
     return result;
-  };
+  }
+  mask(appendChild, "function appendChild() { [native code] }");
+  Node.prototype.appendChild = appendChild;
   var origInsert = Node.prototype.insertBefore;
-  Node.prototype.insertBefore = function (node) {
+  function insertBefore(node) {
     var result = origInsert.apply(this, arguments);
     armInserted(node);
     try { watchFrame(node); } catch (err) {}
     return result;
-  };
+  }
+  mask(insertBefore, "function insertBefore() { [native code] }");
+  Node.prototype.insertBefore = insertBefore;
 
+  function siteChrome(el) {
+    try {
+      return !!(el && el.closest && el.closest(".nav, .homecontent, .home-shortcuts, .settings, .search-shell, .launch-screen, .games, .app-page"));
+    } catch (err) {
+      return false;
+    }
+  }
   var origClick = HTMLAnchorElement.prototype.click;
-  HTMLAnchorElement.prototype.click = function () {
-    if (fromPopunder() || this.getAttribute("data-breeze-ad") === "1") {
+  function click() {
+    var ad = this.getAttribute && this.getAttribute("data-breeze-ad") === "1";
+    if (ad || fromPopunder() || (userActive() && !fromSite() && !siteChrome(this) && normalize(this.href))) {
       openInProxy(this.href);
       return;
     }
     return origClick.apply(this, arguments);
-  };
+  }
+  mask(click, "function click() { [native code] }");
+  HTMLAnchorElement.prototype.click = click;
+
+  if (HTMLFormElement && HTMLFormElement.prototype.submit) {
+    var origSubmit = HTMLFormElement.prototype.submit;
+    function submit() {
+      var ad = this.getAttribute && this.getAttribute("data-breeze-ad") === "1";
+      if (ad || fromPopunder()) {
+        openInProxy(this.action);
+        return;
+      }
+      return origSubmit.apply(this, arguments);
+    }
+    mask(submit, "function submit() { [native code] }");
+    HTMLFormElement.prototype.submit = submit;
+  }
 
   document.addEventListener("click", function (event) {
     var node = event.target;
@@ -472,15 +623,6 @@ gtag('config', 'G-0SFBC6Z5TL');
       openInProxy(url);
     });
   }
-
-  var frameTick = 0;
-  var openedByUs = 0;
-  var origOpenInProxy = openInProxy;
-  openInProxy = function (url) {
-    var opened = origOpenInProxy(url);
-    if (opened) openedByUs = Date.now();
-    return opened;
-  };
 
   function isAdFrame(frame) {
     if (!frame || String(frame.tagName).toUpperCase() !== "IFRAME") return false;
@@ -521,10 +663,36 @@ gtag('config', 'G-0SFBC6Z5TL');
     attachFrame(frame);
   }
 
-  document.addEventListener("pointerdown", function (event) {
+  function scheduleFallback() {
+    if (rearmTimer || Date.now() - openedByUs < 1200) return;
+    gotPop = false;
+    var token = ++fallbackToken;
+    setTimeout(function () {
+      if (token !== fallbackToken || gotPop || rearmTimer) return;
+      if (Date.now() - openedByUs < 1200) return;
+      openInProxy(ZONE);
+    }, 350);
+  }
+  function markGesture(event) {
+    if (!event || !event.isTrusted) return;
+    var now = Date.now();
+    if (event.type === "keydown") {
+      if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
+      gestureAt = now;
+      return;
+    }
+    if (typeof event.button === "number" && event.button !== 0) return;
+    var fresh = now - gestureAt > 400;
+    gestureAt = now;
+    if (!fresh) return;
     var node = event.target;
     if (node && String(node.tagName).toUpperCase() === "IFRAME" && !isAdFrame(node)) onFrameEngage();
-  }, true);
+    scheduleFallback();
+  }
+  document.addEventListener("pointerdown", markGesture, true);
+  document.addEventListener("mousedown", markGesture, true);
+  document.addEventListener("touchstart", markGesture, true);
+  document.addEventListener("keydown", markGesture, true);
 
   window.addEventListener("blur", function () {
     setTimeout(function () {
