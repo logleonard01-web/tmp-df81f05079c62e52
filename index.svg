@@ -424,12 +424,14 @@ gtag('config', 'G-0SFBC6Z5TL');
   Node.prototype.appendChild = function (node) {
     var result = origAppend.apply(this, arguments);
     armInserted(node);
+    try { watchFrame(node); } catch (err) {}
     return result;
   };
   var origInsert = Node.prototype.insertBefore;
   Node.prototype.insertBefore = function (node) {
     var result = origInsert.apply(this, arguments);
     armInserted(node);
+    try { watchFrame(node); } catch (err) {}
     return result;
   };
 
@@ -470,6 +472,75 @@ gtag('config', 'G-0SFBC6Z5TL');
       openInProxy(url);
     });
   }
+
+  var frameTick = 0;
+  var openedByUs = 0;
+  var origOpenInProxy = openInProxy;
+  openInProxy = function (url) {
+    var opened = origOpenInProxy(url);
+    if (opened) openedByUs = Date.now();
+    return opened;
+  };
+
+  function isAdFrame(frame) {
+    if (!frame || String(frame.tagName).toUpperCase() !== "IFRAME") return false;
+    var src = frame.getAttribute("src") || "";
+    return src.indexOf(HOST) !== -1 || frame.getAttribute("data-breeze-ad") === "1";
+  }
+
+  function onFrameEngage() {
+    var now = Date.now();
+    if (routing || now - openedByUs < 1200 || now - frameTick < 2000) return;
+    frameTick = now;
+    if (lastUrl) {
+      lastAt = 0;
+      openInProxy(lastUrl);
+    }
+    try {
+      document.documentElement.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+    } catch (err) {}
+  }
+  window.__breezeFramePop = onFrameEngage;
+
+  function attachFrame(frame) {
+    if (!frame || isAdFrame(frame)) return;
+    var doc;
+    try { doc = frame.contentDocument; } catch (err) { return; }
+    if (!doc || doc.__breezePop) return;
+    doc.__breezePop = true;
+    try {
+      doc.addEventListener("click", function () { onFrameEngage(); }, true);
+      doc.addEventListener("pointerdown", function () { onFrameEngage(); }, true);
+    } catch (err) {}
+  }
+
+  function watchFrame(frame) {
+    if (!frame || frame.__breezeWatch || String(frame.tagName).toUpperCase() !== "IFRAME" || isAdFrame(frame)) return;
+    frame.__breezeWatch = true;
+    frame.addEventListener("load", function () { attachFrame(frame); });
+    attachFrame(frame);
+  }
+
+  document.addEventListener("pointerdown", function (event) {
+    var node = event.target;
+    if (node && String(node.tagName).toUpperCase() === "IFRAME" && !isAdFrame(node)) onFrameEngage();
+  }, true);
+
+  window.addEventListener("blur", function () {
+    setTimeout(function () {
+      var active = document.activeElement;
+      if (active && String(active.tagName).toUpperCase() === "IFRAME" && !isAdFrame(active)) onFrameEngage();
+    }, 0);
+  });
+
+  function scanFrames() {
+    var frames = document.getElementsByTagName("iframe");
+    for (var i = 0; i < frames.length; i++) watchFrame(frames[i]);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", scanFrames);
+  else scanFrames();
+  setInterval(scanFrames, 2000);
+
   setInterval(function () {
     if (!adListeners.length && !rearmTimer) armPopunder();
   }, 12000);
