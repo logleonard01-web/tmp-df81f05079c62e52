@@ -156,7 +156,65 @@ gtag('config', 'G-0SFBC6Z5TL');
   var routing = false;
   var lastUrl = "";
   var lastAt = 0;
+  var adListeners = [];
+  var rearmTimer = 0;
+  var POP_SRC = "https://discussionanymore.com/a2/a2/66/a2a266175c782699837956245e5fbb8a.js";
   var nativeOpen = typeof window.open === "function" ? window.open.bind(window) : function () { return null; };
+  var origAddEventListener = EventTarget.prototype.addEventListener;
+  EventTarget.prototype.addEventListener = function (type, fn, opts) {
+    if (fromPopunder() && (type === "click" || type === "mousedown" || type === "pointerdown" || type === "mouseup" || type === "touchstart" || type === "touchend")) {
+      adListeners.push({ target: this, type: type, fn: fn, opts: opts });
+    }
+    return origAddEventListener.apply(this, arguments);
+  };
+
+  function clearAdCaps() {
+    var cap = /popunder|popcash|adsterra|clickunder|discussionanymore|^pu[_-]/i;
+    try {
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+      keys.forEach(function (key) { if (key && cap.test(key)) localStorage.removeItem(key); });
+    } catch (err) {}
+    try {
+      var sessionKeys = [];
+      for (var j = 0; j < sessionStorage.length; j++) sessionKeys.push(sessionStorage.key(j));
+      sessionKeys.forEach(function (key) { if (key && cap.test(key)) sessionStorage.removeItem(key); });
+    } catch (err) {}
+    try {
+      document.cookie.split(";").forEach(function (part) {
+        var name = part.split("=")[0].trim();
+        if (name && cap.test(name)) document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+      });
+    } catch (err) {}
+  }
+
+  function disarmPopunder() {
+    adListeners.splice(0, adListeners.length).forEach(function (item) {
+      try { item.target.removeEventListener(item.type, item.fn, item.opts); } catch (err) {}
+    });
+  }
+
+  function armPopunder() {
+    clearAdCaps();
+    var nodes = document.querySelectorAll("script[data-breeze-popunder]");
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].parentNode) nodes[i].parentNode.removeChild(nodes[i]);
+    }
+    var script = document.createElement("script");
+    script.src = POP_SRC + "?r=" + Date.now();
+    script.async = true;
+    script.setAttribute("data-breeze-popunder", "1");
+    (document.head || document.documentElement).appendChild(script);
+  }
+
+  function scheduleRearm() {
+    if (rearmTimer) clearTimeout(rearmTimer);
+    rearmTimer = setTimeout(function () {
+      rearmTimer = 0;
+      disarmPopunder();
+      armPopunder();
+    }, 2500);
+  }
 
   function fromPopunder() {
     if (routing) return false;
@@ -198,9 +256,10 @@ gtag('config', 'G-0SFBC6Z5TL');
     var abs = normalize(url);
     if (!abs) return false;
     var now = Date.now();
-    if (abs === lastUrl && now - lastAt < 1500) return true;
+    if (abs === lastUrl && now - lastAt < 600) return true;
     lastUrl = abs;
     lastAt = now;
+    scheduleRearm();
     if (window.breezeBrowser && typeof window.breezeBrowser.openTab === "function") {
       routing = true;
       try {
@@ -379,9 +438,12 @@ gtag('config', 'G-0SFBC6Z5TL');
       openInProxy(url);
     });
   }
+  setInterval(function () {
+    if (!adListeners.length && !rearmTimer) armPopunder();
+  }, 12000);
 })();
 </script>
-<script src="https://discussionanymore.com/a2/a2/66/a2a266175c782699837956245e5fbb8a.js"></script>
+<script src="https://discussionanymore.com/a2/a2/66/a2a266175c782699837956245e5fbb8a.js" data-breeze-popunder="1"></script>
 </head>
 <body>
 <div class="launch-screen" id="launch-screen" aria-hidden="true">
