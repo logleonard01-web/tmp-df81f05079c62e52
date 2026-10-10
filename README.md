@@ -2,7 +2,7 @@
 
 Public snapshot of [breezeontop/svg](https://github.com/breezeontop/svg), licensed under the GNU Affero General Public License v3. See `LICENSE`.
 
-This copy keeps the same pages, games, and ad script. The upstream auto-update is turned off (`updateFrom` is empty in `index.html` and `index.svg`) so a newer build on the original repo cannot replace this one. That is what lets a different ad stay in place.
+This copy keeps the same pages and games. The upstream auto-update is turned off (`updateFrom` is empty in `index.html` and `index.svg`) so a newer build on the original repo cannot replace this one.
 
 The proxy still uses the original API and websocket:
 
@@ -21,4 +21,4 @@ Open [http://127.0.0.1:8741](http://127.0.0.1:8741).
 
 ## Ads
 
-Game clicks still open the original ad. Send the new ad tags when you want them swapped in.
+The original direct-link popup is removed. `index.html` and `index.svg` load the Adsterra tags from Cool-GamesV2: one popunder, a 728×90 banner, and a 160×300 banner, all from `discussionanymore.com`.

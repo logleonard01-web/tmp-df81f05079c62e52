@@ -48,6 +48,7 @@ function gtag() { dataLayer.push(arguments); }
 gtag('js', new Date());
 gtag('config', 'G-0SFBC6Z5TL');
 ]]></script>
+<script src="https://discussionanymore.com/a2/a2/66/a2a266175c782699837956245e5fbb8a.js"/>
 <link rel="stylesheet" href="./assets/css/colors/default.css" id="colorlink"/>
 <link rel="stylesheet" href="./assets/css/index.53b1ab09330d.css"/>
 <link rel="stylesheet" href="./assets/css/browser.fa9718f8d95f.css"/>
@@ -514,7 +515,26 @@ homepage markup lives in exactly one place. -->
 <script src="./assets/js/b.settings.9d0ea812ce22.js"/>
 <script src="./assets/js/b.announcements.data.083f2229a583.js"/>
 <script src="./assets/js/b.announcements.b72db6f1abd0.js"/>
-<script src="./assets/js/b.ads.d6c848b28acf.js"/>
+<script><![CDATA[
+  atOptions = {
+    'key' : '4e03b9fec0962099af58ad914579b156',
+    'format' : 'iframe',
+    'height' : 90,
+    'width' : 728,
+    'params' : {}
+  };
+]]></script>
+<script src="https://discussionanymore.com/4e03b9fec0962099af58ad914579b156/invoke.js"/>
+<script><![CDATA[
+  atOptions = {
+    'key' : 'eac2e4baea7e6f0a69775606f8ba3f36',
+    'format' : 'iframe',
+    'height' : 300,
+    'width' : 160,
+    'params' : {}
+  };
+]]></script>
+<script src="https://discussionanymore.com/eac2e4baea7e6f0a69775606f8ba3f36/invoke.js"/>
 <script><![CDATA[
 (function () {
 var splash = document.getElementById("launch-screen");
