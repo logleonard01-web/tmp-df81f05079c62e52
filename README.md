@@ -9,7 +9,7 @@ The proxy still uses the original API and websocket:
 - `https://breezeunb.locker`
 - `wss://breezeunb.locker/wind/`
 
-`index.html` and `index.svg` load styles, scripts, images, icons, and other `assets`, `scramjet`, and `controller` files from jsDelivr. `sw.js` stays on the page host, because a service worker has to be same-origin:
+`index.html` and `index.svg` load styles, scripts, images, icons, and other `assets`, `scramjet`, and `controller` files from jsDelivr. The proxy worker is `sw.js` on that same jsDelivr path. A service worker has to be same-origin with the page, so a host that does not serve `sw.js` opens the jsDelivr SVG and the worker starts there:
 
 `https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/`
 
