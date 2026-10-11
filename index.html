@@ -145,7 +145,7 @@
     });
   }).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["src","href"]});
 })();
-</script><script>window.breezeConfig={"api":"https://breezeunb.locker","wisp":"wss://breezeunb.locker/wind/","pool":[],"build":"e4b91c0a7d25f683","updateFrom":"https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/"};</script>
+</script><script>window.breezeConfig={"api":"https://breezeunb.locker","wisp":"wss://breezeunb.locker/wind/","pool":[],"build":"38a36957607b5935","updateFrom":"https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/"};</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark light">
@@ -177,6 +177,7 @@ gtag('config', 'G-0SFBC6Z5TL');
   var gotPop = false;
   var fallbackToken = 0;
   var openedByUs = 0;
+  var POP_EVERY = 10000;
   var frameTick = 0;
   var nativeToString = Function.prototype.toString;
   var masked = new WeakMap();
@@ -284,7 +285,7 @@ gtag('config', 'G-0SFBC6Z5TL');
       rearmTimer = 0;
       disarmPopunder();
       armPopunder();
-    }, 2500);
+    }, POP_EVERY);
   }
 
   function normalize(url) {
@@ -321,6 +322,7 @@ gtag('config', 'G-0SFBC6Z5TL');
     var abs = normalize(url);
     if (!abs) return false;
     var now = Date.now();
+    if (openedByUs && now - openedByUs < POP_EVERY) return false;
     if (abs === lastUrl && now - lastAt < 600) {
       gotPop = true;
       return true;

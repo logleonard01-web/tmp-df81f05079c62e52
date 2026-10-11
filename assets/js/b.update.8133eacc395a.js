@@ -5,9 +5,13 @@
   var SHA_URL = "https://api.github.com/repos/logleonard01-web/tmp-df81f05079c62e52/commits/main";
   var KEY = "breeze_update_attempt";
 
-  function go(base, id) {
+  function go(base, id, allowRepeat) {
     var target = new URL("index.svg", base).href + "?v=" + encodeURIComponent(id) + location.hash;
     if (location.href.split("#")[0] === target.split("#")[0]) return;
+    try {
+      if (!allowRepeat && sessionStorage.getItem(KEY) === id) return;
+      sessionStorage.setItem(KEY, id);
+    } catch (err) {}
     location.replace(target);
   }
 
@@ -21,12 +25,8 @@
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (data) {
         if (!data || typeof data.id !== "string" || data.id === cfg.build) return;
-        try {
-          if (sessionStorage.getItem(KEY) === data.id) return;
-          sessionStorage.setItem(KEY, data.id);
-        } catch (err) {}
         if (!ownRepo) {
-          go(from, data.id);
+          go(from, data.id, false);
           return;
         }
         var pinned = (typeof data.commit === "string" && /^[0-9a-f]{40}$/.test(data.commit)) ? REPO + data.commit + "/" : from;
@@ -34,9 +34,9 @@
           .then(function (res) { return res.ok ? res.json() : null; })
           .then(function (commit) {
             var sha = commit && typeof commit.sha === "string" && /^[0-9a-f]{40}$/.test(commit.sha) ? commit.sha : "";
-            go(sha ? REPO + sha + "/" : pinned, data.id);
+            go(sha ? REPO + sha + "/" : pinned, data.id, !!sha);
           })
-          .catch(function () { go(pinned, data.id); });
+          .catch(function () { go(pinned, data.id, false); });
       })
       .catch(function () {});
   }
