@@ -681,6 +681,18 @@ gtag('config', 'G-0SFBC6Z5TL');
       if (token !== fallbackToken || gotPop || rearmTimer) return;
       if (Date.now() - openedByUs < 1200) return;
       openInProxy(ZONE);
+      function showSite() {
+        var tabs = document.querySelectorAll(".browser-tab");
+        if (tabs.length < 2) return;
+        var tab = tabs[0];
+        try {
+          tab.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, pointerId: 1, pointerType: "mouse" }));
+          tab.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+          tab.click();
+        } catch (err) {}
+      }
+      setTimeout(showSite, 600);
+      setTimeout(showSite, 1600);
     }, 350);
   }
   function markGesture(event) {
