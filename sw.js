@@ -4,7 +4,7 @@ if (navigator.userAgent.includes("Firefox")) {
     writable: false,
   });
 }
-importScripts("https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/controller/controller.sw.js");
+importScripts(new URL("controller/controller.sw.js", self.location.href).href);
 
 addEventListener("fetch", (e) => {
   if ($scramjetController.shouldRoute(e)) {

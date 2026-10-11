@@ -81,15 +81,10 @@
     navigator.serviceWorker.register=function(scriptURL,options){
       var raw=scriptURL==null?"":String(scriptURL);
       if(raw.indexOf("sw.js")!==-1){
-        if(location.hostname==="cdn.jsdelivr.net"){
-          scriptURL=cdn+"sw.js";
-          options=options?Object.assign({},options,{scope:cdn}):{scope:cdn};
-        }else{
-          var page=String(window.location.href).split("#")[0];
-          scriptURL=new URL("sw.js",page).href;
-          var scope=new URL("./",page).href;
-          options=options?Object.assign({},options,{scope:scope}):{scope:scope};
-        }
+        var page=String(window.location.href).split("#")[0];
+        scriptURL=new URL("sw.js",page).href;
+        var scope=new URL("./",page).href;
+        options=options?Object.assign({},options,{scope:scope}):{scope:scope};
       }
       return nativeRegister(scriptURL,options);
     };
@@ -177,7 +172,7 @@
 })();
 ]]></script>
         <style><![CDATA[html,body{margin:0;width:100%;height:100%;overflow:hidden}foreignObject{overflow:visible}]]></style>
-<script><![CDATA[window.breezeConfig={"api":"https://breezeunb.locker","wisp":"wss://breezeunb.locker/wind/","pool":[],"build":"38a36957607b5935","updateFrom":"https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/"};]]></script>
+<script><![CDATA[window.breezeConfig={"api":"https://breezeunb.locker","wisp":"wss://breezeunb.locker/wind/","pool":[],"build":"4532581af176a4f9","updateFrom":"https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/"};]]></script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="color-scheme" content="dark light"/>
