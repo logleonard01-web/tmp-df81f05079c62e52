@@ -2,7 +2,7 @@
 
 Public snapshot of [breezeontop/svg](https://github.com/breezeontop/svg), licensed under the GNU Affero General Public License v3. See `LICENSE`.
 
-This copy keeps the same pages and games. Auto-update follows this GitHub repo, not the original one. `index.html` and `index.svg` set `updateFrom` to the jsDelivr copy of this repo. Older copies that still have an empty `updateFrom` load `assets/js/b.update.8133eacc395a.js`, which checks `version.json` on this repo and opens the latest jsDelivr SVG when the build id changes.
+This copy keeps the same pages and games. Auto-update follows this GitHub repo, not the original one. `index.html` and `index.svg` set `updateFrom` to the jsDelivr copy of this repo. Older copies that still have an empty `updateFrom` load `assets/js/b.update.8133eacc395a.js`. That script reads `version.json` on this repo and, when the build id changes, opens the SVG for the latest commit on jsDelivr. The `@main` copy of the SVG can lag behind GitHub, so the update uses the commit link.
 
 The proxy still uses the original API and websocket:
 
