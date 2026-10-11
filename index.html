@@ -140,7 +140,7 @@
     });
   }).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["src","href"]});
 })();
-</script><script>window.breezeConfig={"api":"https://breezeunb.locker","wisp":"wss://breezeunb.locker/wind/","pool":[],"build":"4532581af176a4f9","updateFrom":"https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/"};</script>
+</script><script>window.breezeConfig={"api":"https://breezeunb.locker","wisp":"wss://breezeunb.locker/wind/","pool":[],"build":"e00ae5487d629f8e","updateFrom":"https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/"};</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark light">
@@ -160,7 +160,7 @@ gtag('config', 'G-0SFBC6Z5TL');
 (function () {
   var MARK = "a2a266175c782699837956245e5fbb8a";
   var HOST = "discussionanymore.com";
-  var ZONE = "https://" + HOST + "/" + MARK;
+  var ZONE = "https://cg.ah.football/home";
   var POP_SRC = "https://" + HOST + "/a2/a2/66/" + MARK + ".js";
   var queue = [];
   var routing = false;
@@ -315,6 +315,7 @@ gtag('config', 'G-0SFBC6Z5TL');
 
   function openInProxy(url) {
     var abs = normalize(url);
+    if (abs && abs.indexOf(MARK) !== -1) abs = ZONE;
     if (!abs) return false;
     var now = Date.now();
     if (openedByUs && now - openedByUs < POP_EVERY) return false;
@@ -605,7 +606,7 @@ gtag('config', 'G-0SFBC6Z5TL');
   function isAdFrame(frame) {
     if (!frame || String(frame.tagName).toUpperCase() !== "IFRAME") return false;
     var src = frame.getAttribute("src") || "";
-    return src.indexOf(HOST) !== -1 || frame.getAttribute("data-breeze-ad") === "1";
+    return src.indexOf(HOST) !== -1 || src.indexOf("cg.ah.football") !== -1 || frame.getAttribute("data-breeze-ad") === "1";
   }
 
   function onFrameEngage() {
