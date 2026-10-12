@@ -3,14 +3,6 @@
 <head><script>
 (function(){
   var cdn="https://cdn.jsdelivr.net/gh/logleonard01-web/tmp-df81f05079c62e52@main/";
-  if(location.hostname!=="cdn.jsdelivr.net"){
-    var workerPage=cdn+"index.svg"+location.search+location.hash;
-    fetch(new URL("sw.js",location.href).href,{cache:"no-store"}).then(function(res){
-      var type=res.headers.get("content-type")||"";
-      if(res.ok&&type.indexOf("javascript")!==-1)return;
-      location.replace(workerPage);
-    }).catch(function(){location.replace(workerPage);});
-  }
   var head=document.head||document.getElementsByTagName("head")[0];
   var root=cdn;
   window.__breezeRoot=root;
